@@ -12,7 +12,7 @@ class Model(object):
     Class to define the architecture of the model
     """
     
-    def __init__(self, x_input,t_layer_sizes, p_layer_sizes, dropout=0):
+    def __init__(self, x_input,y_input,t_layer_sizes, p_layer_sizes, dropout=0):
         
         self.t_layer_sizes = t_layer_sizes
         self.p_layer_sizes = p_layer_sizes
@@ -53,14 +53,17 @@ class Model(object):
         init_state_pitch=lstm_pitch.zero_state(p_input_size,tf.int32)
         outputs_pitch,final_state_pitch=tf.nn.dynamic_rnn(lstm_pitch,outputs_time,init_state_pitch,tf.int32)
 
-        
+        loss=tf.nn.sigmoid_cross_entropy_with_logits(outputs_pitch,y_input)
+        loss=tf.reduce_mean(loss)
         #self.pitch_model = StackedCells( p_input_size, celltype=LSTM, layers = p_layer_sizes)
         #self.pitch_model.layers.append(Layer(p_layer_sizes[-1], 2, activation = T.nnet.sigmoid))
         
-        self.dropout = dropout
+        
+        
+        #self.dropout = dropout
 
-        self.conservativity = T.fscalar()
-        self.srng = T.shared_randomstreams.RandomStreams(np.random.randint(0, 1024))
+        #self.conservativity = T.fscalar()
+        #self.srng = T.shared_randomstreams.RandomStreams(np.random.randint(0, 1024))
 
         self.setup_train()
         self.setup_predict()
