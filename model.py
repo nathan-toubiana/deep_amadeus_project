@@ -19,9 +19,12 @@ def Model(t_layer_sizes,p_layer_sizes):
         t_input_size = 80
             
 
-            
-        xss = tf.placeholder(tf.int32, [None, t_input_size,2])
-        ys = tf.placeholder(tf.float32, [None,t_input_size,2])
+        tf.reset_default_graph()
+
+        #Lstm input data recquires size : batch_size,max_time (spanning back how many time steps), ect..
+        xss = tf.placeholder(tf.float32, [None,None, t_input_size])
+        ys = tf.placeholder(tf.float32, [None])
+        #xs = tf.one_hot(xss, depth=1000, axis=-1)
         #xs_onehot = tf.one_hot(xs, depth=1000, axis=-1)
 
         # From our architecture definition, size of the notewise input
@@ -33,9 +36,8 @@ def Model(t_layer_sizes,p_layer_sizes):
             lstm_time.append(tf.contrib.rnn.LSTMCell(i))
             
         time_model=tf.contrib.rnn.MultiRNNCell(lstm_time)        
-        init_state_time=time_model.zero_state(64,tf.int32)
-        outputs_time,final_state_time=tf.nn.dynamic_rnn(time_model,xs,init_state_time,tf.int32)
-
+        init_state_time=time_model.zero_state(tf.shape(ys)[0],tf.float32)
+        outputs_time,final_state_time=tf.nn.dynamic_rnn(time_model, xss, initial_state = init_state_time, dtype = tf.float32)
         #self.time_model = StackedCells( self.t_input_size, celltype=LSTM, layers = t_layer_sizes)
         #self.time_model.layers.append(PassthroughLayer())
 
@@ -53,8 +55,8 @@ def Model(t_layer_sizes,p_layer_sizes):
         
         pitch_model=tf.contrib.rnn.MultiRNNCell(lstm_pitch)
         
-        init_state_pitch=pitch_model.zero_state(64,tf.int32)
-        outputs_pitch,final_state_pitch=tf.nn.dynamic_rnn(pitch_model,outputs_time,init_state_pitch,tf.int32)
+        init_state_pitch=pitch_model.zero_state(tf.shape(ys)[0],tf.float32)
+        outputs_pitch,final_state_pitch=tf.nn.dynamic_rnn(pitch_model,outputs_time,initial_state = init_state_pitch,dtype = tf.float32)
 
         loss=tf.nn.sigmoid_cross_entropy_with_logits(outputs_pitch,y_input)
         loss=tf.reduce_mean(loss)
