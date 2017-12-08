@@ -16,60 +16,58 @@ from tensorflow.python.ops import math_ops
 
 def Model(t_layer_sizes,p_layer_sizes):
 
-        t_input_size = 80
-            
+    t_input_size = 80
 
-        tf.reset_default_graph()
+    tf.reset_default_graph()
 
-        #Lstm input data recquires size : batch_size,max_time (spanning back how many time steps), ect..
-        xss = tf.placeholder(tf.float32, [None,None, t_input_size])
-        ys = tf.placeholder(tf.float32, [None])
-        #xs = tf.one_hot(xss, depth=1000, axis=-1)
-        #xs_onehot = tf.one_hot(xs, depth=1000, axis=-1)
+            #Lstm input data recquires size : batch_size,max_time (spanning back how many time steps), ect..
+    xs = tf.placeholder(tf.float32, [None,None, t_input_size])
+    ys = tf.placeholder(tf.float32, [None,None, t_input_size])
+            #xs = tf.one_hot(xss, depth=1000, axis=-1)
+            #xs_onehot = tf.one_hot(xs, depth=1000, axis=-1)
 
-        # From our architecture definition, size of the notewise input
-        
-        # time network maps from notewise input size to various hidden sizes
-        lstm_time=[]
-        
-        for i in t_layer_sizes:
-            lstm_time.append(tf.contrib.rnn.LSTMCell(i))
-            
-        time_model=tf.contrib.rnn.MultiRNNCell(lstm_time)        
-        init_state_time=time_model.zero_state(tf.shape(ys)[0],tf.float32)
-        outputs_time,final_state_time=tf.nn.dynamic_rnn(time_model, xss, initial_state = init_state_time, dtype = tf.float32)
-        #self.time_model = StackedCells( self.t_input_size, celltype=LSTM, layers = t_layer_sizes)
-        #self.time_model.layers.append(PassthroughLayer())
+            # From our architecture definition, size of the notewise input
 
-        # pitch network takes last layer of time model and state of last note, moving upward
-        # and eventually ends with a two-element sigmoid layer
-        
-        p_input_size = t_layer_sizes[-1] + 2
-        
-        
-        lstm_pitch=[]
-        
-        for i in p_layer_sizes:
-            lstm_pitch.append(tf.contrib.rnn.LSTMCell(i))
-            
-        
-        pitch_model=tf.contrib.rnn.MultiRNNCell(lstm_pitch)
-        
-        init_state_pitch=pitch_model.zero_state(tf.shape(ys)[0],tf.float32)
+            # time network maps from notewise input size to various hidden sizes
+    lstm_time=[]
+
+    for i in t_layer_sizes:
+        lstm_time.append(tf.contrib.rnn.LSTMCell(i))
+
+    time_model=tf.contrib.rnn.MultiRNNCell(lstm_time)        
+    init_state_time=time_model.zero_state(tf.shape(ys)[0],tf.float32)
+    with tf.variable_scope('lstm1'):
+        outputs_time,final_state_time=tf.nn.dynamic_rnn(time_model, xs, initial_state = init_state_time, dtype = tf.float32)
+            #self.time_model = StackedCells( self.t_input_size, celltype=LSTM, layers = t_layer_sizes)
+            #self.time_model.layers.append(PassthroughLayer())
+
+            # pitch network takes last layer of time model and state of last note, moving upward
+            # and eventually ends with a two-element sigmoid layer
+
+    p_input_size = t_layer_sizes[-1] + 2
+
+
+    lstm_pitch=[]
+
+    for i in p_layer_sizes:
+        lstm_pitch.append(tf.contrib.rnn.LSTMCell(i))
+    lstm_pitch.append(tf.contrib.rnn.LSTMCell(80))
+
+
+    pitch_model=tf.contrib.rnn.MultiRNNCell(lstm_pitch)
+
+    init_state_pitch=pitch_model.zero_state(tf.shape(ys)[0],tf.float32)
+    with tf.variable_scope('lstm2'):
         outputs_pitch,final_state_pitch=tf.nn.dynamic_rnn(pitch_model,outputs_time,initial_state = init_state_pitch,dtype = tf.float32)
 
-        loss=tf.nn.sigmoid_cross_entropy_with_logits(outputs_pitch,y_input)
-        loss=tf.reduce_mean(loss)
-        #self.pitch_model = StackedCells( p_input_size, celltype=LSTM, layers = p_layer_sizes)
-        #self.pitch_model.layers.append(Layer(p_layer_sizes[-1], 2, activation = T.nnet.sigmoid))
+    loss=tf.nn.sigmoid_cross_entropy_with_logits(labels=ys,logits=outputs_pitch)
+    loss=tf.reduce_mean(loss)
         
         
         
-        #self.dropout = dropout
+    return outputs_pitch
 
-        self.setup_train()
-        self.setup_predict()
-        self.setup_slow_walk()
+        
         
         
         
