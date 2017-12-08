@@ -22,8 +22,8 @@ def Model(t_layer_sizes,p_layer_sizes):
         tf.reset_default_graph()
 
         #Lstm input data recquires size : batch_size,max_time (spanning back how many time steps), ect..
-        xss = tf.placeholder(tf.float32, [None,None, t_input_size])
-        ys = tf.placeholder(tf.float32, [None])
+        xs = tf.placeholder(tf.float32, [None,None, t_input_size])
+        ys = tf.placeholder(tf.float32, [None,None, t_input_size])
         #xs = tf.one_hot(xss, depth=1000, axis=-1)
         #xs_onehot = tf.one_hot(xs, depth=1000, axis=-1)
 
