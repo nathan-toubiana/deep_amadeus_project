@@ -85,7 +85,7 @@ class Model(object):
         #self.output_mat = tf.placeholder(???)
         
         self.epsilon = np.spacing(np.float32(1.0))
-
+            #doesn't need any change
         def step_time(in_data, *other):
             other = list(other)
             split = -len(self.t_layer_sizes) if self.dropout else len(other)
@@ -94,6 +94,7 @@ class Model(object):
             new_states = self.time_model.forward(in_data, prev_hiddens=hiddens, dropout=masks)
             return new_states
         
+        #doesn't need any change
         def step_note(in_data, *other):
             other = list(other)
             split = -len(self.p_layer_sizes) if self.dropout else len(other)
@@ -151,6 +152,7 @@ class Model(object):
 
         note_outputs_info = [initial_state_with_taps(layer, num_timebatch) for layer in self.pitch_model.layers]
         #???
+        #what does scan mean - check on the internet
         note_result, _ = theano.scan(fn=step_note, sequences=[note_inputs], non_sequences=pitch_masks, outputs_info=note_outputs_info)
         
         self.note_thoughts = note_result
@@ -170,6 +172,8 @@ class Model(object):
         # whether or not those are articulated.
         # The padright is there because self.output_mat[:,:,:,0] -> 3D matrix with (b,x,y), but we need 3d tensor with 
         # (b,x,y,1) instead
+        
+        
         active_notes = T.shape_padright(self.output_mat[:,1:,:,0])
         mask = T.concatenate([T.ones_like(active_notes),active_notes], axis=3)
         
@@ -183,6 +187,7 @@ class Model(object):
             updates=updates,
             allow_input_downcast=True)
 
+        
         self.update_thought_fun = theano.function(
             inputs=[self.input_mat, self.output_mat],
             outputs= ensure_list(self.time_thoughts) + ensure_list(self.note_thoughts) + [self.cost],
