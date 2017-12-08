@@ -1,4 +1,4 @@
-import os, random
+import os
 from func.midi_to_statematrix import *
 from func.data import *
 #import cPickle as pickle
@@ -30,8 +30,10 @@ def loadPieces(dirpath):
     return pieces
 
 def getPieceSegment(pieces):
-    piece_output = random.choice(pieces.values())
+    pcs=pieces.values()
+    piece_output = random.choice(list(pcs))
     start = random.randrange(0,len(piece_output)-batch_len,division_len)
+    print('test ')
     # print "Range is {} {} {} -> {}".format(0,len(piece_output)-batch_len,division_len, start)
 
     seg_out = piece_output[start:start+batch_len]

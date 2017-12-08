@@ -83,7 +83,7 @@ def evaluate(output, input_y):
         tf.summary.scalar('LeNet_error_num', error_num)
     return error_num
 
-def training(X_train, y_train,t_layer_sizes,p_layer_sizes,batch_size, pre_trained_model=None):
+def training(song,t_layer_sizes,p_layer_sizes,batch_size, pre_trained_model=None):
     
     # define the variables and parameter needed during training
     with tf.name_scope('inputs'):
@@ -92,8 +92,9 @@ def training(X_train, y_train,t_layer_sizes,p_layer_sizes,batch_size, pre_traine
         
         
     output, loss = Model(t_layer_sizes,p_layer_sizes,xs,ys)
-
-    iters = int(X_train.shape[0] / batch_size)
+    
+    
+    iters = int(np.array(song).shape[0] / batch_size)
     print('number of batches for training: {}'.format(iters))
 
     step = train_step(loss)
@@ -103,6 +104,8 @@ def training(X_train, y_train,t_layer_sizes,p_layer_sizes,batch_size, pre_traine
     best_acc = 0
     cur_model_name = 'lenet_{}'.format(int(time.time()))
 
+    
+    
     with tf.Session() as sess:
         merge = tf.summary.merge_all()
 
@@ -124,31 +127,16 @@ def training(X_train, y_train,t_layer_sizes,p_layer_sizes,batch_size, pre_traine
 
             for itr in range(iters):
                 iter_total += 1
-
-                training_batch_x = X_train[itr * batch_size: (1 + itr) * batch_size]
-                training_batch_y = y_train[itr * batch_size: (1 + itr) * batch_size]
+                training_batch_x,training_batch_y= map(numpy.array, getPieceSegment(song))
 
                 _, cur_loss = sess.run([step, loss], feed_dict={xs: training_batch_x, ys: training_batch_y})
-
-                if iter_total % 100 == 0:
-                    # do validation
-                    valid_eve, merge_result = sess.run([eve, merge], feed_dict={xs: X_val, ys: y_val})
-                    valid_acc = 100 - valid_eve * 100 / y_val.shape[0]
-                    if verbose:
-                        print('{}/{} loss: {} validation accuracy : {}%'.format(
-                            batch_size * (itr + 1),
-                            X_train.shape[0],
-                            cur_loss,
-                            valid_acc))
-
+                print(cur_loss)
+                
                     # save the merge result summary
                     writer.add_summary(merge_result, iter_total)
 
                     # when achieve the best validation accuracy, we store the model paramters
-                    if valid_acc > best_acc:
-                        print('Best validation accuracy! iteration:{} accuracy: {}%'.format(iter_total, valid_acc))
-                        best_acc = valid_acc
-                        saver.save(sess, 'model/{}'.format(cur_model_name))
+                    
 
     print("Traning ends. The best valid accuracy is {}. Model named {}.".format(best_acc, cur_model_name))
 
