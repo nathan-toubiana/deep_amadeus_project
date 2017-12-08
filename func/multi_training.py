@@ -1,6 +1,6 @@
 import os, random
-from midi_to_statematrix import *
-from data import *
+from func.midi_to_statematrix import *
+from func.data import *
 #import cPickle as pickle
 import pickle
 
