@@ -6,32 +6,38 @@ from tensorflow.python.ops import nn_ops
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import math_ops
 
+import tensorflow as tf
+from tensorflow.contrib.rnn import RNNCell
+from tensorflow.python.ops import variable_scope as vs
+from tensorflow.python.ops import nn_ops
+from tensorflow.python.ops import array_ops
+from tensorflow.python.ops import math_ops
 
-class Model(object):
-    """
-    Class to define the architecture of the model
-    """
-    
-    def __init__(self, x_input,y_input,t_layer_sizes, p_layer_sizes, dropout=0):
-        
-        self.t_layer_sizes = t_layer_sizes
-        self.p_layer_sizes = p_layer_sizes
+
+def Model(t_layer_sizes,p_layer_sizes):
+
+        t_input_size = 80
+            
+
+        tf.reset_default_graph()
+
+        #Lstm input data recquires size : batch_size,max_time (spanning back how many time steps), ect..
+        xss = tf.placeholder(tf.float32, [None,None, t_input_size])
+        ys = tf.placeholder(tf.float32, [None])
+        #xs = tf.one_hot(xss, depth=1000, axis=-1)
+        #xs_onehot = tf.one_hot(xs, depth=1000, axis=-1)
 
         # From our architecture definition, size of the notewise input
-        self.t_input_size = 80
         
         # time network maps from notewise input size to various hidden sizes
         lstm_time=[]
         
         for i in t_layer_sizes:
-            lstm_time.append(tensorflow.contrib.rnn.LSTMcell(i))
+            lstm_time.append(tf.contrib.rnn.LSTMCell(i))
             
-        lstm_time=tensorflow.contrib.rnn.MultiRNNCell([lstm])
-        self.time_model=lstm_time
-        
-        init_state_time=lstm_time.zero_state(t_input_size,tf.int32)
-        outputs_time,final_state_time=tf.nn.dynamic_rnn(lstm_time,x_input,init_state_time,tf.int32)
-
+        time_model=tf.contrib.rnn.MultiRNNCell(lstm_time)        
+        init_state_time=time_model.zero_state(tf.shape(ys)[0],tf.float32)
+        outputs_time,final_state_time=tf.nn.dynamic_rnn(time_model, xss, initial_state = init_state_time, dtype = tf.float32)
         #self.time_model = StackedCells( self.t_input_size, celltype=LSTM, layers = t_layer_sizes)
         #self.time_model.layers.append(PassthroughLayer())
 
@@ -44,14 +50,13 @@ class Model(object):
         lstm_pitch=[]
         
         for i in p_layer_sizes:
-            lstm_pitch.append(tensorflow.contrib.rnn.LSTMcell(i))
+            lstm_pitch.append(tf.contrib.rnn.LSTMCell(i))
             
         
-        lstm_pitch=tensorflow.contrib.rnn.MultiRNNCell([lstm])
-        self.pitch_model=lstm_pitch
+        pitch_model=tf.contrib.rnn.MultiRNNCell(lstm_pitch)
         
-        init_state_pitch=lstm_pitch.zero_state(p_input_size,tf.int32)
-        outputs_pitch,final_state_pitch=tf.nn.dynamic_rnn(lstm_pitch,outputs_time,init_state_pitch,tf.int32)
+        init_state_pitch=pitch_model.zero_state(tf.shape(ys)[0],tf.float32)
+        outputs_pitch,final_state_pitch=tf.nn.dynamic_rnn(pitch_model,outputs_time,initial_state = init_state_pitch,dtype = tf.float32)
 
         loss=tf.nn.sigmoid_cross_entropy_with_logits(outputs_pitch,y_input)
         loss=tf.reduce_mean(loss)
@@ -61,9 +66,6 @@ class Model(object):
         
         
         #self.dropout = dropout
-
-        #self.conservativity = T.fscalar()
-        #self.srng = T.shared_randomstreams.RandomStreams(np.random.randint(0, 1024))
 
         self.setup_train()
         self.setup_predict()
